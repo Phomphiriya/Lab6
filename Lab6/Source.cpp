@@ -4,6 +4,16 @@
 #include<time.h>
 #include<stdlib.h>
 
+char cursor(int x, int y) {
+	HANDLE hStd = GetStdHandle(STD_OUTPUT_HANDLE);
+	char buf[2]; COORD c = { x,y }; DWORD num_read;
+	if (
+		!ReadConsoleOutputCharacter(hStd, (LPTSTR)buf, 1, c, (LPDWORD)&num_read))
+
+		return '\0';
+	else
+		return buf[0];
+}
 void gotoxy(int x, int y)
 {
 	COORD v = { x, y };
@@ -51,9 +61,15 @@ void setcursor(bool visible)
 }
 void draw_enemy(int x, int y) 
 {
-	setcolor(4, 0);
+	setcolor( rand() % 10, 0);
 	gotoxy(x, y);
 	printf("*");
+}
+void displayscore(int x, int y, int score)
+{
+	setcolor(7, 8);
+	gotoxy(x, y);
+	printf("Score = %d" , score);
 }
 
 int main()
@@ -64,10 +80,19 @@ int main()
 	int statebul = 0;
 	int bx[5], by[5], tbn[5] = { 0 };
 	int i;
-		for (int i = 0; i < 20; i++) {
-			int Ey = rand() % 5+2;
-			int Ex = rand() % 80+5;
+	int countEx[20];
+	int countEy[20];
+	int Ex, Ey;
+	int enemy;
+	int score = 0;
+
+		for (enemy = 0; enemy < 20; enemy++) {
+			Ey = rand() % 5 + 2;
+			Ex = rand() % 80 + 5;
 			draw_enemy(Ex, Ey);
+			//save position enemy to Ex and Ey
+			countEx[enemy] = Ex;
+			countEy[enemy] = Ey;
 		}
 	draw_ship(x, y);
 	do {
@@ -91,7 +116,7 @@ int main()
 				{
 					statebul = 1;  bx[i] = x + 3; by[i] = y - 1;
 					tbn[i] = 1;
-					Beep(500, 50);
+					Beep(500, 60);
 					break;
 				}
 			}
@@ -100,10 +125,26 @@ int main()
 		for (int i = 0; i < 5; i++)
 		{
 			if (tbn[i] == 1) {
+				int isCollide = 0;
+				for (int e = 0; e < 20; e++) {
+					if (bx[i] == countEx[e] && by[i] == countEy[e]) { //If position bullet == position enemy is collide = ture
+						isCollide = true;
+						score++;
+						Beep(300, 60);
+						Ey = rand() % 5 + 2;
+						Ex = rand() % 80 + 5;
+						draw_enemy(Ex, Ey);
+					}
+				}
 				erase_bullet(bx[i], by[i]);
-				if (by[i] == 0) { tbn[i] = 0; }
+				if (by[i] == 0 || isCollide) //delete bullet when y=0 or collide = ture
+				{ 
+					tbn[i] = 0; 
+				}
 				else { draw_bullet(bx[i], --by[i]); }
+				
 			}
+			displayscore(90, 0 ,score);
 		}
 		Sleep(100);
 	} while (ch != 'x');
